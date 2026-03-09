@@ -124,6 +124,27 @@ jobs:
           GITOPS_DEV_OVERLAY: ${{ env.GITOPS_DEV_OVERLAY }}
           IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
 
+      - name: Debug GitOps auth
+        working-directory: sentinel-gitops
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
+          GITOPS_REPO: ${{ env.GITOPS_REPO }}
+        run: |
+          echo "Remote is:"
+          git remote -v
+
+          echo "Testing GitHub API access to target repo..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITOPS_REPO}")
+          echo "API status: $STATUS"
+
+          if [ "$STATUS" != "200" ]; then
+            echo "Token cannot access repo correctly."
+            exit 1
+          fi    
+
       - name: Commit and push GitOps update branch
         working-directory: sentinel-gitops
         shell: bash
