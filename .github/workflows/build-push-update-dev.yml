@@ -124,6 +124,31 @@ jobs:
           GITOPS_DEV_OVERLAY: ${{ env.GITOPS_DEV_OVERLAY }}
           IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
 
+
+      - name: Debug write access to GitOps repo
+        working-directory: sentinel-gitops
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
+          GITOPS_REPO: ${{ env.GITOPS_REPO }}
+        run: |
+          SHA=$(git rev-parse HEAD)
+          BRANCH_NAME="debug/test-${GITHUB_RUN_ID}"
+
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${GITOPS_REPO}/git/refs \
+            -d "{\"ref\":\"refs/heads/${BRANCH_NAME}\",\"sha\":\"${SHA}\"}")
+
+          echo "Create ref status: $RESPONSE"
+          cat response.json
+
+          if [ "$RESPONSE" -lt 200 ] || [ "$RESPONSE" -ge 300 ]; then
+            exit 1
+          fi    
+
       - name: Debug GitOps auth
         working-directory: sentinel-gitops
         shell: bash
