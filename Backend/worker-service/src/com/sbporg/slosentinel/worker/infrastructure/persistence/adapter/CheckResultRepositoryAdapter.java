@@ -1,6 +1,6 @@
 package com.sbporg.slosentinel.worker.infrastructure.persistence.adapter;
 
-import com.sbporg.slosentinel.worker.application.port.out.CheckResultRepositoryPort;
+import com.sbporg.slosentinel.worker.application.port.outbound.CheckResultRepositoryPort;
 import com.sbporg.slosentinel.worker.domain.model.CheckResult;
 import com.sbporg.slosentinel.worker.infrastructure.persistence.jpa.CheckResultJpaEntity;
 import com.sbporg.slosentinel.worker.infrastructure.persistence.jpa.CheckResultJpaRepository;
