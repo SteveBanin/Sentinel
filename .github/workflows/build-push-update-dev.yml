@@ -92,6 +92,7 @@ jobs:
           ref: ${{ env.GITOPS_BRANCH }}
           token: ${{ secrets.GITOPS_REPO_TOKEN }}
           path: sentinel-gitops
+          persist-credentials: false
 
       - name: Update dev overlay image tags
         shell: bash
@@ -122,6 +123,8 @@ jobs:
 
       - name: Commit and push GitOps update branch
         shell: bash
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
         run: |
           cd ../sentinel-gitops
           BRANCH="gitops/dev-${{ steps.meta.outputs.image_tag }}"
@@ -131,4 +134,6 @@ jobs:
           git add "${GITOPS_DEV_OVERLAY}"
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "Deploy dev: ${{ steps.meta.outputs.image_tag }}"
+
+          git remote set-url origin "https://x-access-token:${GITOPS_TOKEN}@github.com/${GITOPS_REPO}.git"
           git push origin "$BRANCH"
