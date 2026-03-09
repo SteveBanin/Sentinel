@@ -1,7 +1,7 @@
 package com.sbporg.slosentinel.worker.application.usecase;
 
-import com.sbporg.slosentinel.worker.application.port.out.CheckResultRepositoryPort;
-import com.sbporg.slosentinel.worker.application.port.out.TargetApiClientPort;
+import com.sbporg.slosentinel.worker.application.port.outbound.CheckResultRepositoryPort;
+import com.sbporg.slosentinel.worker.application.port.outbound.TargetApiClientPort;
 import com.sbporg.slosentinel.worker.domain.model.TargetDefinition;
 import com.sbporg.slosentinel.worker.infrastructure.check.HttpChecker;
 import com.sbporg.slosentinel.worker.infrastructure.config.SentinelApiProperties;

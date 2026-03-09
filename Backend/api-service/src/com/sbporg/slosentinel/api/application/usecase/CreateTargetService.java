@@ -1,7 +1,7 @@
 package com.sbporg.slosentinel.api.application.usecase;
 
 import com.sbporg.slosentinel.api.application.port.in.CreateTargetUseCase;
-import com.sbporg.slosentinel.api.application.port.out.TargetRepositoryPort;
+import com.sbporg.slosentinel.api.application.port.outbound.TargetRepositoryPort;
 import com.sbporg.slosentinel.api.domain.model.Target;
 import com.sbporg.slosentinel.shared.domain.valueobject.TargetId;
 

@@ -1,7 +1,8 @@
 package com.sbporg.slosentinel.worker.presentation.rest;
 
-import com.sbporg.slosentinel.worker.application.port.out.CheckResultRepositoryPort;
 import com.sbporg.slosentinel.shared.domain.valueobject.TargetId;
+import com.sbporg.slosentinel.worker.application.port.outbound.CheckResultRepositoryPort;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

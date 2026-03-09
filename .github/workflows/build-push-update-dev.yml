@@ -1,0 +1,132 @@
+name: build-push-update-dev
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "Backend/**"
+      - ".github/workflows/build-push-update-dev.yml"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-push-update-dev
+  cancel-in-progress: true
+
+jobs:
+  build_push_and_update_gitops:
+    runs-on: ubuntu-latest
+
+    env:
+      API_IMAGE: ${{ vars.API_IMAGE }}
+      WORKER_IMAGE: ${{ vars.WORKER_IMAGE }}
+      GITOPS_REPO: ${{ vars.GITOPS_REPO }}
+      GITOPS_BRANCH: ${{ vars.GITOPS_BRANCH }}
+      GITOPS_DEV_OVERLAY: ${{ vars.GITOPS_DEV_OVERLAY }}
+
+    defaults:
+      run:
+        working-directory: Backend
+
+    steps:
+      - name: Checkout Sentinel repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Run backend tests
+        run: ./gradlew test
+
+      - name: Compute image tag
+        id: meta
+        shell: bash
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=sha-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push api-service image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          file: ./Backend/api-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.API_IMAGE }}:${{ steps.meta.outputs.image_tag }}
+            ${{ env.API_IMAGE }}:develop-latest
+
+      - name: Build and push worker-service image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          file: ./Backend/worker-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.WORKER_IMAGE }}:${{ steps.meta.outputs.image_tag }}
+            ${{ env.WORKER_IMAGE }}:develop-latest
+
+      - name: Checkout sentinel-gitops repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          ref: ${{ env.GITOPS_BRANCH }}
+          token: ${{ secrets.GITOPS_REPO_TOKEN }}
+          path: sentinel-gitops
+
+      - name: Update dev overlay image tags
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          repo_root = Path.cwd().parent
+          file_path = repo_root / "sentinel-gitops" / os.environ["GITOPS_DEV_OVERLAY"]
+          image_tag = os.environ["IMAGE_TAG"]
+
+          text = file_path.read_text()
+
+          matches = re.findall(r'(newTag:\s*)(\S+)', text)
+          if len(matches) < 2:
+              raise SystemExit("Expected two newTag entries in overlay file")
+
+          text = re.sub(r'(newTag:\s*)\S+', rf'\1{image_tag}', text, count=2)
+          file_path.write_text(text)
+
+          print(f"Updated {file_path} to {image_tag}")
+          PY
+        env:
+          GITOPS_DEV_OVERLAY: ${{ env.GITOPS_DEV_OVERLAY }}
+          IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
+
+      - name: Commit and push GitOps update
+        shell: bash
+        run: |
+          cd ../sentinel-gitops
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${GITOPS_DEV_OVERLAY}"
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Deploy dev: ${{ steps.meta.outputs.image_tag }}"
+          git push origin "${GITOPS_BRANCH}"

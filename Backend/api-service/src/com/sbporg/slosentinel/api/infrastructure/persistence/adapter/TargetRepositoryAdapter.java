@@ -1,6 +1,6 @@
 package com.sbporg.slosentinel.api.infrastructure.persistence.adapter;
 
-import com.sbporg.slosentinel.api.application.port.out.TargetRepositoryPort;
+import com.sbporg.slosentinel.api.application.port.outbound.TargetRepositoryPort;
 import com.sbporg.slosentinel.api.domain.model.Target;
 import com.sbporg.slosentinel.api.infrastructure.persistence.jpa.TargetJpaEntity;
 import com.sbporg.slosentinel.api.infrastructure.persistence.jpa.TargetJpaRepository;
