@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend: clean test",
+      "type": "shell",
+      "command": ".\\gradlew.bat",
+      "args": ["clean", "test"],
+      "options": { "cwd": "${workspaceFolder}\\Backend" },
+      "problemMatcher": "$gradle",
+      "group": "build"
+    },
+    {
+      "label": "Backend: api-service bootRun",
+      "type": "shell",
+      "command": ".\\gradlew.bat",
+      "args": [":api-service:bootRun"],
+      "options": { "cwd": "${workspaceFolder}\\Backend" },
+      "problemMatcher": "$gradle",
+      "isBackground": true
+    },
+    {
+      "label": "Backend: worker-service bootRun",
+      "type": "shell",
+      "command": ".\\gradlew.bat",
+      "args": [":worker-service:bootRun"],
+      "options": { "cwd": "${workspaceFolder}\\Backend" },
+      "problemMatcher": "$gradle",
+      "isBackground": true
+    },
+
+    {
+      "label": "Frontend: npm install",
+      "type": "shell",
+      "command": "npm",
+      "args": ["install"],
+      "options": { "cwd": "${workspaceFolder}\\Frontend" }
+    },
+    {
+      "label": "Frontend: dev",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": { "cwd": "${workspaceFolder}\\Frontend" },
+      "isBackground": true
+    }
+  ]
+}

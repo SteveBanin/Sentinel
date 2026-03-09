@@ -1,0 +1,40 @@
+plugins {
+    id "org.springframework.boot" version "${springBootVersion}" apply false
+    id "io.spring.dependency-management" version "${springDependencyManagementVersion}" apply false
+}
+
+allprojects {
+    group = project.findProperty("group")
+    version = project.findProperty("version")
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: "java"
+    apply plugin: "io.spring.dependency-management"
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(Integer.parseInt(project.findProperty("javaVersion")))
+        }
+    }
+
+    // Use your layout: ./src and ./test
+    sourceSets {
+        main {
+            java { srcDirs = ["src"] }
+            resources { srcDirs = ["src/resources"] }
+        }
+        test {
+            java { srcDirs = ["test"] }
+            resources { srcDirs = ["test/resources"] }
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}

@@ -1,0 +1,3 @@
+rootProject.name = "Sentinel"
+
+include "api-service", "worker-service", "shared-kernel"
