@@ -128,7 +128,7 @@ jobs:
         working-directory: sentinel-gitops
         shell: bash
         run: |
-          BRANCH="gitops/dev-${{ steps.meta.outputs.image_tag }}"
+          BRANCH="gitops/dev-${{ steps.meta.outputs.image_tag }}-${{ github.run_id }}"
 
           git checkout -b "$BRANCH"
 
