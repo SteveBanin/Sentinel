@@ -2,7 +2,8 @@ package com.sbporg.slosentinel.api.application.usecase;
 
 import com.sbporg.slosentinel.api.application.dto.TargetDto;
 import com.sbporg.slosentinel.api.application.port.in.ListTargetsUseCase;
-import com.sbporg.slosentinel.api.application.port.out.TargetRepositoryPort;
+import com.sbporg.slosentinel.api.application.port.outbound.TargetRepositoryPort;
+
 import org.springframework.stereotype.Service;
 import java.util.List;
 

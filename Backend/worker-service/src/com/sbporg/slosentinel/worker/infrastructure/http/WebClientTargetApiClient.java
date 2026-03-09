@@ -2,7 +2,7 @@ package com.sbporg.slosentinel.worker.infrastructure.http;
 
 import com.sbporg.slosentinel.shared.domain.model.TargetType;
 import com.sbporg.slosentinel.shared.domain.valueobject.TargetId;
-import com.sbporg.slosentinel.worker.application.port.out.TargetApiClientPort;
+import com.sbporg.slosentinel.worker.application.port.outbound.TargetApiClientPort;
 import com.sbporg.slosentinel.worker.domain.model.TargetDefinition;
 import com.sbporg.slosentinel.worker.infrastructure.config.SentinelApiProperties;
 import org.springframework.stereotype.Component;
