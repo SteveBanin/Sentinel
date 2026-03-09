@@ -92,9 +92,10 @@ jobs:
           ref: ${{ env.GITOPS_BRANCH }}
           token: ${{ secrets.GITOPS_REPO_TOKEN }}
           path: sentinel-gitops
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Update dev overlay image tags
+        working-directory: sentinel-gitops
         shell: bash
         run: |
           python3 - <<'PY'
@@ -102,38 +103,90 @@ jobs:
           import re
           from pathlib import Path
 
-          repo_root = Path.cwd().parent
-          file_path = repo_root / "sentinel-gitops" / os.environ["GITOPS_DEV_OVERLAY"]
+          file_path = Path(os.environ["GITOPS_DEV_OVERLAY"])
           image_tag = os.environ["IMAGE_TAG"]
+
+          if not file_path.is_file():
+              raise SystemExit(f"Overlay file not found: {file_path}")
 
           text = file_path.read_text()
 
           matches = re.findall(r'(newTag:\s*)(\S+)', text)
           if len(matches) < 2:
-              raise SystemExit("Expected two newTag entries in overlay file")
+              raise SystemExit(f"Expected at least two 'newTag' entries, found {len(matches)}")
 
           text = re.sub(r'(newTag:\s*)\S+', rf'\1{image_tag}', text, count=2)
           file_path.write_text(text)
 
-          print(f"Updated {file_path} to {image_tag}")
+          print(f"Updated {file_path} with image tag: {image_tag}")
           PY
         env:
           GITOPS_DEV_OVERLAY: ${{ env.GITOPS_DEV_OVERLAY }}
           IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
 
-      - name: Commit and push GitOps update branch
+
+      - name: Debug write access to GitOps repo
+        working-directory: sentinel-gitops
         shell: bash
         env:
-          GITOPS_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
+          GITOPS_REPO: ${{ env.GITOPS_REPO }}
         run: |
-          cd ../sentinel-gitops
+          SHA=$(git rev-parse HEAD)
+          BRANCH_NAME="debug/test-${GITHUB_RUN_ID}"
+
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${GITOPS_REPO}/git/refs \
+            -d "{\"ref\":\"refs/heads/${BRANCH_NAME}\",\"sha\":\"${SHA}\"}")
+
+          echo "Create ref status: $RESPONSE"
+          cat response.json
+
+          if [ "$RESPONSE" -lt 200 ] || [ "$RESPONSE" -ge 300 ]; then
+            exit 1
+          fi    
+
+      - name: Debug GitOps auth
+        working-directory: sentinel-gitops
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_REPO_TOKEN }}
+          GITOPS_REPO: ${{ env.GITOPS_REPO }}
+        run: |
+          echo "Remote is:"
+          git remote -v
+
+          echo "Testing GitHub API access to target repo..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${GH_TOKEN}" \
+            "https://api.github.com/repos/${GITOPS_REPO}")
+          echo "API status: $STATUS"
+
+          if [ "$STATUS" != "200" ]; then
+            echo "Token cannot access repo correctly."
+            exit 1
+          fi    
+
+      - name: Commit and push GitOps update branch
+        working-directory: sentinel-gitops
+        shell: bash
+        run: |
           BRANCH="gitops/dev-${{ steps.meta.outputs.image_tag }}"
+
           git checkout -b "$BRANCH"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${GITOPS_DEV_OVERLAY}"
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "Deploy dev: ${{ steps.meta.outputs.image_tag }}"
 
-          git remote set-url origin "https://x-access-token:${GITOPS_TOKEN}@github.com/${GITOPS_REPO}.git"
+          git add "${{ env.GITOPS_DEV_OVERLAY }}"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit — skipping push"
+            exit 0
+          fi
+
+          git commit -m "Deploy dev: ${{ steps.meta.outputs.image_tag }}"
           git push origin "$BRANCH"
