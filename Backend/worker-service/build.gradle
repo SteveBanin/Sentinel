@@ -1,0 +1,29 @@
+plugins {
+  id "org.springframework.boot"
+}
+
+springBoot {
+  mainClass = "com.sbporg.slosentinel.worker.WorkerApplication"
+}
+
+dependencies {
+  implementation project(":shared-kernel")
+
+  // WebClient (HTTP client) + reactor retry/timeout
+  implementation "org.springframework.boot:spring-boot-starter-webflux"
+
+  implementation "org.springframework.boot:spring-boot-starter-actuator"
+  runtimeOnly "io.micrometer:micrometer-registry-prometheus"
+
+  // keep these if you want worker to connect to Postgres later (results storage)
+  implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+  runtimeOnly "org.postgresql:postgresql"
+
+  implementation "org.springframework.boot:spring-boot-starter-validation"
+
+  testImplementation "org.springframework.boot:spring-boot-starter-test"
+}
+
+bootJar {
+  archiveFileName = "worker-service.jar"
+}

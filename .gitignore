@@ -1,0 +1,21 @@
+.idea/
+*.iml
+
+# Env files
+infra/.env
+.env
+
+
+# Gradle / IDE / build outputs
+.gradle
+**/build
+**/out
+**/.idea
+**/*.iml
+
+# VCS
+.git
+.gitignore
+
+# Node (if any under Backend)
+**/node_modules
